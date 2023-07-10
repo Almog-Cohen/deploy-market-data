@@ -18,9 +18,16 @@ RUN npm install --legacy-peer-deps
 # Build the Next.js app
 RUN npm run build
 
-# Passing Environment Arguments
-# ENV PORT $PORT
-# ENV PROJ_NAME $PROJ_NAME
+# Passing Build Arguments
+ARG PORT
+ARG MONGDODB_CONNECTION_STRING
+
+# Passing Environment Variables
+ENV NODE_CACHE_TIMER $NODE_CACHE_TIMER
+ENV IS_DEV $IS_DEV
+ENV BUILD_VERSION $BUILD_VERSION
+
+# Container Exposed Port
 EXPOSE $PORT
 
 CMD [ "npm", "run", "prod" ]
