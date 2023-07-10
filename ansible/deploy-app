@@ -1,0 +1,16 @@
+---
+- name: deploy app
+  hosts: all
+  tasks:
+    - name: Clean up Docker containers
+      shell: docker rm -f $(docker ps -aq)
+      ignore_errors: true
+
+    - name: Clean up Docker images
+      shell: docker rmi -f $(docker images -q)
+      ignore_errors: true
+
+    - name: Run Docker Compose command
+      shell: docker-compose up -d
+      args:
+        chdir: /home/user/market-data/
