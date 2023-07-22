@@ -14,3 +14,53 @@
       shell: docker-compose up -d
       args:
         chdir: /home/user/market-data/
+---
+- name: deploy app
+  hosts: vps
+  gather_facts: false
+  tasks:
+    - name: Copy the docker-compose file to VPS
+      ansible.builtin.copy:
+        src: ./docker-compose.yaml
+        dest: /home/user/market-data/docker-compose.yaml
+
+    - name: Copy the nginx conf file to VPS
+      ansible.builtin.copy:
+        src: ./nginx-conf/
+        dest: /home/user/market-data/nginx-conf/
+
+    - name: Stop and remove all containers
+      docker_container:
+        state: stopped
+        remove_volumes: yes
+        remove_links: yes
+        remove: yes
+      register: stopped_containers
+      ignore_errors: yes
+
+    - name: Remove all stopped containers
+      docker_container:
+        state: absent
+        remove_volumes: yes
+        remove_links: yes
+      with_items: "{{ stopped_containers.containers | default([]) | map(attribute='name') | list }}"
+      ignore_errors: yes
+
+    - name: Remove all dangling images
+      docker_image:
+        state: absent
+        filter: dangling=true
+      ignore_errors: yes
+
+    - name: Remove all images except "none"
+      docker_image:
+        state: absent
+        filter: all
+      when: item.get('RepoTags', ['none']) != ['none']
+      with_items: "{{ ansible_facts.docker_images }}"
+      ignore_errors: yes
+
+    - name: Update to the newly built image
+      community.docker.docker_compose:
+        project_src: /home/user/market-data
+        state: present
